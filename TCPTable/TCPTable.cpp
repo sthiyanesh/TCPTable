@@ -2,127 +2,116 @@
 //
 
 // Need to link with Iphlpapi.lib and Ws2_32.lib
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#pragma comment(lib,"psapi")
+#pragma comment(lib,"iphlpapi")
+#pragma comment(lib,"wsock32")
+#pragma warning(disable: 4996)
+#include <windows.h>
+#include <winsock.h>
 #include <iphlpapi.h>
-#include <stdio.h>
+#include <psapi.h>
+#include <iostream>
+#include <vector>
+using namespace std;
 
-#pragma comment(lib, "iphlpapi.lib")
-#pragma comment(lib, "ws2_32.lib")
-#pragma warning(disable : 4996)
+char* dupcat(const char* s1, ...) {
+    int len;
+    char* p, * q, * sn;
+    va_list ap;
 
-#define MALLOC(x) HeapAlloc(GetProcessHeap(), 0, (x))
-#define FREE(x) HeapFree(GetProcessHeap(), 0, (x))
-
-/* Note: could also use malloc() and free() */
-
-int main()
-{
-
-    // Declare and initialize variables
-    PMIB_TCPTABLE pTcpTable;
-    DWORD dwSize = 0;
-    DWORD dwRetVal = 0;
-
-    char szLocalAddr[128];
-    char szRemoteAddr[128];
-
-    struct in_addr IpAddr;
-
-    int i;
-
-    pTcpTable = (MIB_TCPTABLE*)MALLOC(sizeof(MIB_TCPTABLE));
-    if (pTcpTable == NULL) {
-        printf("Error allocating memory\n");
-        return 1;
+    len = strlen(s1);
+    va_start(ap, s1);
+    while (1) {
+        sn = va_arg(ap, char*);
+        if (!sn)
+            break;
+        len += strlen(sn);
     }
+    va_end(ap);
 
-    dwSize = sizeof(MIB_TCPTABLE);
-    // Make an initial call to GetTcpTable to
-    // get the necessary size into the dwSize variable
-    if ((dwRetVal = GetTcpTable(pTcpTable, &dwSize, TRUE)) ==
-        ERROR_INSUFFICIENT_BUFFER) {
-        FREE(pTcpTable);
-        pTcpTable = (MIB_TCPTABLE*)MALLOC(dwSize);
-        if (pTcpTable == NULL) {
-            printf("Error allocating memory\n");
-            return 1;
+    p = new char[len + 1];
+    strcpy(p, s1);
+    q = p + strlen(p);
+
+    va_start(ap, s1);
+    while (1) {
+        sn = va_arg(ap, char*);
+        if (!sn)
+            break;
+        strcpy(q, sn);
+        q += strlen(q);
+    }
+    va_end(ap);
+
+    return p;
+}
+
+/*string processName(DWORD id) {
+    HANDLE processHandle = NULL;
+    char filename[MAX_PATH];
+    char* ret;
+
+    processHandle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, id);
+    if (processHandle != NULL) {
+        if (GetModuleBaseName(processHandle, NULL, filename, sizeof(filename)) == 0) {
+            return "Failed to get module filename.";
+        }
+        else {
+            ret = dupcat(filename, 0);
+            return ret;
+        }
+        CloseHandle(processHandle);
+    }
+    return "Failed to open process.";
+}*/
+
+char* dwordToString(DWORD id) {
+    char aux[10];
+    unsigned long parts[] = { (id & 0xff),(id >> 8) & 0xff,(id >> 16) & 0xff,(id >> 24) & 0xff };
+    char* ret = dupcat(ultoa(parts[0], aux, 10), ".", 0);
+    for (int i = 1;i < 4;i++) {
+        if (i < 3)
+            ret = dupcat(ret, ultoa(parts[i], aux, 10), ".", 0);
+        else
+            ret = dupcat(ret, ultoa(parts[i], aux, 10), 0);
+    }
+    return ret;
+}
+
+void main() {
+    vector<unsigned char> buffer;
+    DWORD dwSize = sizeof(MIB_TCPTABLE_OWNER_PID);
+    DWORD dwRetValue = 0;
+
+    do {
+        buffer.resize(dwSize, 0);
+        dwRetValue = GetExtendedTcpTable(buffer.data(), &dwSize, TRUE, AF_INET, TCP_TABLE_OWNER_PID_ALL, 0);
+    } while (dwRetValue == ERROR_INSUFFICIENT_BUFFER);
+    if (dwRetValue == ERROR_SUCCESS)
+    {
+        PMIB_TCPTABLE_OWNER_PID ptTable = reinterpret_cast<PMIB_TCPTABLE_OWNER_PID>(buffer.data());
+        cout << "Number of Entries: " << ptTable->dwNumEntries << endl << endl;
+        for (DWORD i = 0; i < ptTable->dwNumEntries; i++) {
+            DWORD pid = ptTable->table[i].dwOwningPid;
+            cout << "PID: " << pid << endl;
+            //cout << "Name: " << processName(ptTable->table[i].dwOwningPid) << endl;
+            cout << "State: " << ptTable->table[i].dwState << endl;
+            cout << "Local: "
+                << dwordToString(ptTable->table[i].dwLocalAddr)
+                << ":"
+                << htons((unsigned short)ptTable->table[i].dwLocalPort)
+                << endl;
+
+            cout << "Remote: "
+                << dwordToString(ptTable->table[i].dwRemoteAddr)
+                << ":"
+                << htons((unsigned short)ptTable->table[i].dwRemotePort)
+                << endl;
+
+            cout << endl;
         }
     }
-    // Make a second call to GetTcpTable to get
-    // the actual data we require
-    if ((dwRetVal = GetTcpTable(pTcpTable, &dwSize, TRUE)) == NO_ERROR) {
-        printf("\tNumber of entries: %d\n", (int)pTcpTable->dwNumEntries);
-        printf("TCP\tSTATE\t\tLocal Addr\tLocal Port\tRemote Address\tRemote Port");
-        for (i = 0; i < (int)pTcpTable->dwNumEntries; i++) {
-            IpAddr.S_un.S_addr = (u_long)pTcpTable->table[i].dwLocalAddr;
-            strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
-            IpAddr.S_un.S_addr = (u_long)pTcpTable->table[i].dwRemoteAddr;
-            strcpy_s(szRemoteAddr, sizeof(szRemoteAddr), inet_ntoa(IpAddr));
-
-            printf("\n%d\t%ld - ", i,
-                pTcpTable->table[i].dwState);
-            switch (pTcpTable->table[i].dwState) {
-            case MIB_TCP_STATE_CLOSED:
-                printf("CLOSED");
-                break;
-            case MIB_TCP_STATE_LISTEN:
-                printf("LISTEN");
-                break;
-            case MIB_TCP_STATE_SYN_SENT:
-                printf("SYN-SENT");
-                break;
-            case MIB_TCP_STATE_SYN_RCVD:
-                printf("SYN-RECEIVED");
-                break;
-            case MIB_TCP_STATE_ESTAB:
-                printf("ESTABLISHED");
-                break;
-            case MIB_TCP_STATE_FIN_WAIT1:
-                printf("FIN-WAIT-1");
-                break;
-            case MIB_TCP_STATE_FIN_WAIT2:
-                printf("FIN-WAIT-2");
-                break;
-            case MIB_TCP_STATE_CLOSE_WAIT:
-                printf("CLOSE-WAIT");
-                break;
-            case MIB_TCP_STATE_CLOSING:
-                printf("CLOSING");
-                break;
-            case MIB_TCP_STATE_LAST_ACK:
-                printf("LAST-ACK");
-                break;
-            case MIB_TCP_STATE_TIME_WAIT:
-                printf("TIME-WAIT");
-                break;
-            case MIB_TCP_STATE_DELETE_TCB:
-                printf("DELETE-TCB");
-                break;
-            default:
-                printf("UNKNOWN dwState value");
-                break;
-            }
-            printf("\t%s", szLocalAddr);
-            printf(" \t%d",
-                ntohs((u_short)pTcpTable->table[i].dwLocalPort));
-            printf("\t%s", szRemoteAddr);
-            printf("\t%d",
-                ntohs((u_short)pTcpTable->table[i].dwRemotePort));
-        }
-    }
-    else {
-        printf("\tGetTcpTable failed with %d\n", dwRetVal);
-        FREE(pTcpTable);
-        return 1;
-    }
-
-    if (pTcpTable != NULL) {
-        FREE(pTcpTable);
-        pTcpTable = NULL;
-    }
-
-    return 0;
+    cin.get();
 }// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
 
