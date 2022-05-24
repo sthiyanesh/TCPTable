@@ -12,37 +12,11 @@
 #include <psapi.h>
 #include <iostream>
 #include <vector>
-#include "psapi.h"
 using namespace std;
 
-string ProcessIdToName(DWORD processId)
-{
-    string ret;
-    HANDLE handle = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,FALSE,
-        processId /* This is the PID, you can find one from windows task manager */
-    );
-    if (handle)
-    {
-        DWORD buffSize = 1024;
-        CHAR buffer[1024];
-        if (QueryFullProcessImageNameA(handle, 0, buffer, &buffSize))
-        {
-            ret = buffer;
-        }
-        else
-        {
-            printf("Error GetModuleBaseNameA : %lu", GetLastError());
-        }
-        CloseHandle(handle);
-    }
-    else
-    {
-        printf("Error OpenProcess : %lu", GetLastError());
-    }
-    return ret;
-}
 
-int main() {
+
+void main() {
     vector<unsigned char> buffer;
     DWORD dwSize = sizeof(MIB_TCPTABLE_OWNER_PID);
     DWORD dwRetValue = 0;
@@ -60,15 +34,15 @@ int main() {
     {
         PMIB_TCPTABLE_OWNER_PID ptTable = reinterpret_cast<PMIB_TCPTABLE_OWNER_PID>(buffer.data());
         cout << "Number of Entries: " << ptTable->dwNumEntries << endl << endl;
-        cout << "TCP\tPID\tSTATE\t\tLocal Addr\tLocal Port\tRemote Address\tRemote Port\tProcess Name";
+        cout << "TCP\tPID\tSTATE\t\tLocal Addr\tLocal Port\tRemote Address\tRemote Port";
         for (DWORD i = 0; i < ptTable->dwNumEntries; i++) {
             DWORD pid = ptTable->table[i].dwOwningPid;
             IpAddr.S_un.S_addr = (u_long)ptTable->table[i].dwLocalAddr;
             strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
             IpAddr.S_un.S_addr = (u_long)ptTable->table[i].dwRemoteAddr;
             strcpy_s(szRemoteAddr, sizeof(szRemoteAddr), inet_ntoa(IpAddr));
-            string pname = ProcessIdToName(pid);
-            printf("\n%d\t%d\t%ld - ", i,pid,
+
+            printf("\n%d\t%d\t%ld - ", i, pid,
                 ptTable->table[i].dwState);
             switch (ptTable->table[i].dwState) {
             case MIB_TCP_STATE_CLOSED:
@@ -115,13 +89,11 @@ int main() {
             printf(" \t%d",
                 ntohs((u_short)ptTable->table[i].dwLocalPort));
             printf("\t\t%s", szRemoteAddr);
-            printf("\t%d\t",
+            printf("\t%d",
                 ntohs((u_short)ptTable->table[i].dwRemotePort));
-            cout << "\t" << pname;
         }
     }
     cin.get();
-    return 0;
 }// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
 
