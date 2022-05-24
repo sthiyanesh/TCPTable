@@ -2,6 +2,8 @@
 //
 
 // Need to link with Iphlpapi.lib and Ws2_32.lib
+#pragma comment(lib, "iphlpapi.lib")
+#pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib,"psapi")
 #pragma comment(lib,"iphlpapi")
 #pragma comment(lib,"wsock32")
@@ -118,6 +120,71 @@ int main() {
             printf("\t%d\t",
                 ntohs((u_short)ptTable->table[i].dwRemotePort));
             cout << "\t" << pname;
+
+            MIB_TCPROW row;
+            row.dwLocalAddr = ptTable->table[i].dwLocalAddr;
+            row.dwLocalPort = ptTable->table[i].dwLocalPort;
+            row.dwRemoteAddr = ptTable->table[i].dwRemoteAddr;
+            row.dwRemotePort = ptTable->table[i].dwRemotePort;
+            row.dwState = ptTable->table[i].dwState;
+            void* processRow = &row;
+
+            if (row.dwRemoteAddr != 0)
+            {
+                ULONG rosSize = 0, rodSize = 0;
+                ULONG winStatus;
+                PUCHAR ros = NULL, rod = NULL;
+                rodSize = sizeof(TCP_ESTATS_DATA_ROD_v0);
+                PTCP_ESTATS_DATA_ROD_v0 dataRod = { 0 };
+
+                if (rosSize != 0) {
+                    ros = (PUCHAR)malloc(rosSize);
+                    if (ros == NULL) {
+                        wprintf(L"\nOut of memory");
+                        return 0;
+                    }
+                    else
+                        memset(ros, 0, rosSize); // zero the buffer
+                }
+                if (rodSize != 0) {
+                    rod = (PUCHAR)malloc(rodSize);
+                    if (rod == NULL) {
+                        free(ros);
+                        wprintf(L"\nOut of memory");
+                        return 0;
+                    }
+                    else
+                        memset(rod, 0, rodSize); // zero the buffer
+                }
+
+                winStatus = GetPerTcpConnectionEStats((PMIB_TCPROW)&row, TcpConnectionEstatsData, NULL, 0, 0, ros, 0, rosSize, rod, 0, rodSize);
+
+                dataRod = (PTCP_ESTATS_DATA_ROD_v0)rod;
+
+                cout<<dataRod->DataBytesIn;
+                cout<<dataRod->DataBytesOut;
+
+                PTCP_ESTATS_BANDWIDTH_ROD_v0 bandwidthRod = { 0 };
+
+                rodSize = sizeof(TCP_ESTATS_BANDWIDTH_ROD_v0);
+                if (rodSize != 0) {
+                    rod = (PUCHAR)malloc(rodSize);
+                    if (rod == NULL) {
+                        free(ros);
+                        wprintf(L"\nOut of memory");
+                        return 0;
+                    }
+                    else
+                        memset(rod, 0, rodSize); // zero the buffer
+                }
+
+                winStatus = GetPerTcpConnectionEStats((PMIB_TCPROW)&row, TcpConnectionEstatsBandwidth, NULL, 0, 0, ros, 0, rosSize, rod, 0, rodSize);
+
+                bandwidthRod = (PTCP_ESTATS_BANDWIDTH_ROD_v0)rod;
+                cout << bandwidthRod->OutboundBandwidth;
+                cout << bandwidthRod->InboundBandwidth;
+
+            }
         }
     }
     cin.get();
