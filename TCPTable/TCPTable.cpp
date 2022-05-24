@@ -2,19 +2,20 @@
 //
 
 // Need to link with Iphlpapi.lib and Ws2_32.lib
+#include <winsock2.h>
+#include <Windows.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <tcpestats.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <vector>
+#include<string>
+#include <iostream>
+
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib,"psapi")
-#pragma comment(lib,"iphlpapi")
-#pragma comment(lib,"wsock32")
 #pragma warning(disable: 4996)
-#include <windows.h>
-#include <winsock.h>
-#include <iphlpapi.h>
-#include <psapi.h>
-#include <iostream>
-#include <vector>
-#include "psapi.h"
 using namespace std;
 
 string ProcessIdToName(DWORD processId)
@@ -69,7 +70,7 @@ int main() {
             strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
             IpAddr.S_un.S_addr = (u_long)ptTable->table[i].dwRemoteAddr;
             strcpy_s(szRemoteAddr, sizeof(szRemoteAddr), inet_ntoa(IpAddr));
-            string pname = ProcessIdToName(pid);
+            //string pname = ProcessIdToName(pid);
             printf("\n%d\t%d\t%ld - ", i,pid,
                 ptTable->table[i].dwState);
             switch (ptTable->table[i].dwState) {
@@ -119,7 +120,6 @@ int main() {
             printf("\t\t%s", szRemoteAddr);
             printf("\t%d\t",
                 ntohs((u_short)ptTable->table[i].dwRemotePort));
-            cout << "\t" << pname;
 
             MIB_TCPROW row;
             row.dwLocalAddr = ptTable->table[i].dwLocalAddr;
@@ -161,8 +161,8 @@ int main() {
 
                 dataRod = (PTCP_ESTATS_DATA_ROD_v0)rod;
 
-                cout<<dataRod->DataBytesIn;
-                cout<<dataRod->DataBytesOut;
+                cout<<"\nDataBytesIn:" << dataRod->DataBytesIn<<"\n";
+                cout<<"\nDataBytesOut:" << dataRod->DataBytesOut<<"\n";
 
                 PTCP_ESTATS_BANDWIDTH_ROD_v0 bandwidthRod = { 0 };
 
@@ -181,8 +181,9 @@ int main() {
                 winStatus = GetPerTcpConnectionEStats((PMIB_TCPROW)&row, TcpConnectionEstatsBandwidth, NULL, 0, 0, ros, 0, rosSize, rod, 0, rodSize);
 
                 bandwidthRod = (PTCP_ESTATS_BANDWIDTH_ROD_v0)rod;
-                cout << bandwidthRod->OutboundBandwidth;
-                cout << bandwidthRod->InboundBandwidth;
+                
+                cout << "\nOutboundBandwidth:" << bandwidthRod->OutboundBandwidth << "\n";
+                cout << "\nInboundBandwidth:" << bandwidthRod->InboundBandwidth << "\n";
 
             }
         }
