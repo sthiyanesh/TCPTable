@@ -12,11 +12,34 @@
 #include <vector>
 #include<string>
 #include <iostream>
+#include<fstream>
 
 #pragma comment(lib, "iphlpapi.lib")
 #pragma comment(lib, "ws2_32.lib")
 #pragma warning(disable: 4996)
 using namespace std;
+
+struct process {
+    int Pid;
+    string Pname;
+    string LocalAddress;
+    int LocalPort;
+    string RemoteAddress;
+    int RemotePort;
+    int StateID;
+    string StateName;
+    unsigned long long int DataByteIn;
+    unsigned long long int DataByteOut;
+    unsigned long long int TotalByte;
+    int sflag = 0;
+};
+
+struct diffdata {
+    string Pname;
+    unsigned long long int DataByteIn;
+    unsigned long long int DataByteOut;
+    unsigned long long int TotalByte;
+};
 
 string ProcessIdToName(DWORD processId)
 {
@@ -34,18 +57,20 @@ string ProcessIdToName(DWORD processId)
         }
         else
         {
-            printf("Error GetModuleBaseNameA : %lu", GetLastError());
+            return "Error GetModuleBaseNameA : "+GetLastError();
         }
         CloseHandle(handle);
     }
     else
     {
-        printf("Error OpenProcess : %lu", GetLastError());
+        return "Error OpenProcess : "+GetLastError();
     }
     return ret;
 }
 
-int main() {
+vector<process> getData() {
+    vector<process> a;
+
     vector<unsigned char> buffer;
     DWORD dwSize = sizeof(MIB_TCPTABLE_OWNER_PID);
     DWORD dwRetValue = 0;
@@ -63,63 +88,77 @@ int main() {
     {
         PMIB_TCPTABLE_OWNER_PID ptTable = reinterpret_cast<PMIB_TCPTABLE_OWNER_PID>(buffer.data());
         cout << "Number of Entries: " << ptTable->dwNumEntries << endl << endl;
-        cout << "TCP\tPID\tSTATE\t\tLocal Addr\tLocal Port\tRemote Address\tRemote Port\tProcess Name";
+        //cout << "TCP\tPID\tSTATE\t\tLocal Addr\tLocal Port\tRemote Address\tRemote Port\tProcess Name";
         for (DWORD i = 0; i < ptTable->dwNumEntries; i++) {
+            process p;
             DWORD pid = ptTable->table[i].dwOwningPid;
             IpAddr.S_un.S_addr = (u_long)ptTable->table[i].dwLocalAddr;
             strcpy_s(szLocalAddr, sizeof(szLocalAddr), inet_ntoa(IpAddr));
             IpAddr.S_un.S_addr = (u_long)ptTable->table[i].dwRemoteAddr;
             strcpy_s(szRemoteAddr, sizeof(szRemoteAddr), inet_ntoa(IpAddr));
-            //string pname = ProcessIdToName(pid);
-            printf("\n%d\t%d\t%ld - ", i,pid,
+            string pname = ProcessIdToName(pid);
+            printf("\n%d\t%d\t%ld - ", i, pid,
                 ptTable->table[i].dwState);
+            cout << pname;
+            string Statename;
             switch (ptTable->table[i].dwState) {
             case MIB_TCP_STATE_CLOSED:
-                printf("CLOSED");
+                Statename = "CLOSED";
                 break;
             case MIB_TCP_STATE_LISTEN:
-                printf("LISTEN");
+                Statename = "LISTEN";
                 break;
             case MIB_TCP_STATE_SYN_SENT:
-                printf("SYN-SENT");
+                Statename = "SYN-SENT";
                 break;
             case MIB_TCP_STATE_SYN_RCVD:
-                printf("SYN-RECEIVED");
+                Statename = "SYN-RECEIVED";
                 break;
             case MIB_TCP_STATE_ESTAB:
-                printf("ESTABLISHED");
+                Statename = "ESTABLISHED";
                 break;
             case MIB_TCP_STATE_FIN_WAIT1:
-                printf("FIN-WAIT-1");
+                Statename = "FIN-WAIT-1";
                 break;
             case MIB_TCP_STATE_FIN_WAIT2:
-                printf("FIN-WAIT-2");
+                Statename = "FIN-WAIT-2";
                 break;
             case MIB_TCP_STATE_CLOSE_WAIT:
-                printf("CLOSE-WAIT");
+                Statename = "CLOSE-WAIT";
                 break;
             case MIB_TCP_STATE_CLOSING:
-                printf("CLOSING");
+                Statename = "CLOSING";
                 break;
             case MIB_TCP_STATE_LAST_ACK:
-                printf("LAST-ACK");
+                Statename = "LAST-ACK";
                 break;
             case MIB_TCP_STATE_TIME_WAIT:
-                printf("TIME-WAIT");
+                Statename = "TIME-WAIT";
                 break;
             case MIB_TCP_STATE_DELETE_TCB:
-                printf("DELETE-TCB");
+                Statename = "DELETE-TCB";
                 break;
             default:
-                printf("UNKNOWN dwState value");
+                Statename = "UNKNOWN dwState value";
                 break;
             }
-            printf("\t%s", szLocalAddr);
+
+            /*printf("\t%s", szLocalAddr);
             printf(" \t%d",
                 ntohs((u_short)ptTable->table[i].dwLocalPort));
             printf("\t\t%s", szRemoteAddr);
             printf("\t%d\t",
                 ntohs((u_short)ptTable->table[i].dwRemotePort));
+            */
+
+            p.Pid = pid;
+            p.Pname = pname;
+            p.LocalAddress = szLocalAddr;
+            p.RemoteAddress = szRemoteAddr;
+            p.LocalPort = ptTable->table[i].dwLocalPort;
+            p.RemotePort = ptTable->table[i].dwRemotePort;
+            p.StateID = ptTable->table[i].dwState;
+            p.StateName = Statename;
 
             MIB_TCPROW row;
             row.dwLocalAddr = ptTable->table[i].dwLocalAddr;
@@ -141,7 +180,7 @@ int main() {
                     ros = (PUCHAR)malloc(rosSize);
                     if (ros == NULL) {
                         wprintf(L"\nOut of memory");
-                        return 0;
+                        return a;
                     }
                     else
                         memset(ros, 0, rosSize); // zero the buffer
@@ -151,7 +190,7 @@ int main() {
                     if (rod == NULL) {
                         free(ros);
                         wprintf(L"\nOut of memory");
-                        return 0;
+                        return a;
                     }
                     else
                         memset(rod, 0, rodSize); // zero the buffer
@@ -161,8 +200,11 @@ int main() {
 
                 dataRod = (PTCP_ESTATS_DATA_ROD_v0)rod;
 
-                cout<<"\nDataBytesIn:" << dataRod->DataBytesIn<<"\n";
-                cout<<"\nDataBytesOut:" << dataRod->DataBytesOut<<"\n";
+                cout << "\nDataBytesIn:" << dataRod->DataBytesIn << "\n";
+                cout << "\nDataBytesOut:" << dataRod->DataBytesOut << "\n";
+
+                p.DataByteIn = dataRod->DataBytesIn;
+                p.DataByteOut = dataRod->DataBytesOut;
 
                 PTCP_ESTATS_BANDWIDTH_ROD_v0 bandwidthRod = { 0 };
 
@@ -172,7 +214,7 @@ int main() {
                     if (rod == NULL) {
                         free(ros);
                         wprintf(L"\nOut of memory");
-                        return 0;
+                        return a;
                     }
                     else
                         memset(rod, 0, rodSize); // zero the buffer
@@ -181,12 +223,81 @@ int main() {
                 winStatus = GetPerTcpConnectionEStats((PMIB_TCPROW)&row, TcpConnectionEstatsBandwidth, NULL, 0, 0, ros, 0, rosSize, rod, 0, rodSize);
 
                 bandwidthRod = (PTCP_ESTATS_BANDWIDTH_ROD_v0)rod;
-                
-                cout << "\nOutboundBandwidth:" << bandwidthRod->OutboundBandwidth << "\n";
-                cout << "\nInboundBandwidth:" << bandwidthRod->InboundBandwidth << "\n";
+
+                //cout << "\nOutboundBandwidth:" << bandwidthRod->OutboundBandwidth << "\n";
+                //cout << "\nInboundBandwidth:" << bandwidthRod->InboundBandwidth << "\n";
+                int flag = 0;
+                for (int i = 0;i < a.size();i++) {
+                    if (a[i].Pid == p.Pid) {
+                        a[i].DataByteIn += p.DataByteIn;
+                        a[i].DataByteOut += p.DataByteOut;
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 0) {
+                    a.push_back(p);
+                }
 
             }
         }
+    }
+
+    return a;
+}
+
+int main() {
+    vector<process> a = getData();
+    for (int i = 0;i < 3;i++) {
+        cout << "thiyanesh";
+        Sleep(1000 * 60 * 2);
+        cout << "Time Out";
+        vector<process> b = getData();
+        vector<diffdata> d;
+        
+        // To find the Difference After 5 Mins
+        for (int i = 0;i < a.size();i++) {
+            for (int j = 0;j < b.size();j++) {
+                if (a[i].Pname.substr(0, 5) != "Error" && b[j].Pname.substr(0, 5) != "Error" && a[i].Pname == b[j].Pname && a[i].DataByteIn <= b[j].DataByteIn && a[i].DataByteOut <=b[j].DataByteOut) {
+                    diffdata c;
+                    c.Pname = a[i].Pname;
+                    cout << "\n" << a[i].Pid << a[i].Pname;
+                    cout << "\n" << b[j].DataByteIn;
+                    cout << "\n" << a[i].DataByteIn;
+                    c.DataByteIn = b[j].DataByteIn - a[i].DataByteIn;
+                    c.DataByteOut = b[j].DataByteOut - a[i].DataByteOut;
+                    c.TotalByte = c.DataByteIn + c.DataByteOut;
+                    cout << "\n" << c.DataByteIn;
+                    cout << "\n" << c.DataByteOut;
+                    cout << "\n" << c.TotalByte << "\n";
+                    //cout << "\nProcess Name:" << a[i].Pname << "\nDataByteIn:" << b[j].DataByteIn << "\nDataByteOut:" << b[j].DataByteOut << endl;
+                    d.push_back(c);
+                }
+            }
+        }
+        a = b;
+
+        // Sorting based on Total Bytes.
+        for (int i = 0;i < d.size();i++) {
+            for (int j = 0;j < d.size()-1;j++) {
+                if (d[j].TotalByte < d[j + 1].TotalByte) {
+                    diffdata p = d[j];
+                    d[j] = d[j+1];
+                    d[j + 1] = p;
+                }
+            }
+        }
+        
+        //Getting Content of File.
+        string content = "After 5 mins\n{";
+        int s = (d.size() < 10) ? d.size() : 10;
+        for (int i = 0;i < s;i++) {
+            content += "\n\t\"" + d[i].Pname + "\":{\n\t\t\"bytein\":" + (to_string(d[i].DataByteIn)) + ",\n\t\t\"byteout\":" + to_string(d[i].DataByteOut) + ",\n\t\t\"totalbytes\":" + to_string(d[i].TotalByte) + "\n\t},";
+        }
+        cout << content;
+        // Writing to File.
+        
+
     }
     cin.get();
     return 0;
