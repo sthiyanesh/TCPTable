@@ -249,27 +249,27 @@ vector<process> getData() {
 int main() {
     vector<process> a = getData();
     for (int i = 0;i < 3;i++) {
-        cout << "thiyanesh";
-        Sleep(1000 * 60 * 2);
-        cout << "Time Out";
+        Sleep(1000 * 60 * 5);
         vector<process> b = getData();
         vector<diffdata> d;
         
         // To find the Difference After 5 Mins
         for (int i = 0;i < a.size();i++) {
             for (int j = 0;j < b.size();j++) {
-                if (a[i].Pname.substr(0, 5) != "Error" && b[j].Pname.substr(0, 5) != "Error" && a[i].Pname == b[j].Pname && a[i].DataByteIn <= b[j].DataByteIn && a[i].DataByteOut <=b[j].DataByteOut) {
+                if (a[i].Pname.substr(0, 5) != "Error" && b[j].Pname.substr(0, 5) != "Error" && a[i].Pname == b[j].Pname && a[i].DataByteIn <= b[j].DataByteIn && a[i].DataByteOut <=b[j].DataByteOut && a[i].Pname != "") {
                     diffdata c;
                     c.Pname = a[i].Pname;
-                    cout << "\n" << a[i].Pid << a[i].Pname;
-                    cout << "\n" << b[j].DataByteIn;
-                    cout << "\n" << a[i].DataByteIn;
+                    cout << "\nPid:" << a[i].Pid <<" Pname: " << a[i].Pname;
+                    cout << "\n DatabyteIn After 5 Mins = " << b[j].DataByteIn;
+                    cout << "\n DataByteIn initially      " << a[i].DataByteIn;
                     c.DataByteIn = b[j].DataByteIn - a[i].DataByteIn;
                     c.DataByteOut = b[j].DataByteOut - a[i].DataByteOut;
                     c.TotalByte = c.DataByteIn + c.DataByteOut;
-                    cout << "\n" << c.DataByteIn;
-                    cout << "\n" << c.DataByteOut;
-                    cout << "\n" << c.TotalByte << "\n";
+                    cout << "\n Difference =              " << c.DataByteIn;
+                    cout << "\n DatabyteOut After 5 Mins = " << b[j].DataByteOut;
+                    cout << "\n DataByteOut initially      " << a[i].DataByteOut;
+                    cout << "\n Difference =               " << c.DataByteOut;
+                    cout << "\n Total Byte = " << c.TotalByte<<"\n";
                     //cout << "\nProcess Name:" << a[i].Pname << "\nDataByteIn:" << b[j].DataByteIn << "\nDataByteOut:" << b[j].DataByteOut << endl;
                     d.push_back(c);
                 }
@@ -294,6 +294,7 @@ int main() {
         for (int i = 0;i < s;i++) {
             content += "\n\t\"" + d[i].Pname + "\":{\n\t\t\"bytein\":" + (to_string(d[i].DataByteIn)) + ",\n\t\t\"byteout\":" + to_string(d[i].DataByteOut) + ",\n\t\t\"totalbytes\":" + to_string(d[i].TotalByte) + "\n\t},";
         }
+        content += "\n}";
         cout << content;
         // Writing to File.
         
