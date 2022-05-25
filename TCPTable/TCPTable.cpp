@@ -298,6 +298,7 @@ int main() {
         cout << content;
         // Writing to File.
         
+        ofstream f;
 
     }
     cin.get();
