@@ -28,17 +28,17 @@ struct process {
     int RemotePort;
     int StateID;
     string StateName;
-    unsigned long long int DataByteIn;
-    unsigned long long int DataByteOut;
-    unsigned long long int TotalByte;
+    long long int DataByteIn;
+    long long int DataByteOut;
+    long long int TotalByte;
     int sflag = 0;
 };
 
 struct diffdata {
     string Pname;
-    unsigned long long int DataByteIn;
-    unsigned long long int DataByteOut;
-    unsigned long long int TotalByte;
+    long long int DataByteIn;
+    long long int DataByteOut;
+    long long int TotalByte;
 };
 
 string ProcessIdToName(DWORD processId)
@@ -203,8 +203,8 @@ vector<process> getData() {
                 cout << "\nDataBytesIn:" << dataRod->DataBytesIn << "\n";
                 cout << "\nDataBytesOut:" << dataRod->DataBytesOut << "\n";
 
-                p.DataByteIn = dataRod->DataBytesIn;
-                p.DataByteOut = dataRod->DataBytesOut;
+                p.DataByteIn = dataRod->DataBytesIn/1024/1024;
+                p.DataByteOut = dataRod->DataBytesOut/1024/1024;
 
                 PTCP_ESTATS_BANDWIDTH_ROD_v0 bandwidthRod = { 0 };
 
@@ -256,7 +256,7 @@ int main() {
         // To find the Difference After 5 Mins
         for (int i = 0;i < a.size();i++) {
             for (int j = 0;j < b.size();j++) {
-                if (a[i].Pname.substr(0, 5) != "Error" && b[j].Pname.substr(0, 5) != "Error" && a[i].Pname == b[j].Pname && a[i].DataByteIn <= b[j].DataByteIn && a[i].DataByteOut <=b[j].DataByteOut && a[i].Pname != "") {
+                if (a[i].Pname.substr(0, 5) != "Error" && b[j].Pname.substr(0, 5) != "Error" && a[i].Pname == b[j].Pname /* && a[i].DataByteIn <= b[j].DataByteIn && a[i].DataByteOut <= b[j].DataByteOut */ && a[i].Pname != "") {
                     diffdata c;
                     c.Pname = a[i].Pname;
                     cout << "\nPid:" << a[i].Pid <<" Pname: " << a[i].Pname;
@@ -289,16 +289,21 @@ int main() {
         }
         
         //Getting Content of File.
-        string content = "After 5 mins\n{";
+        string content = "{";
         int s = (d.size() < 10) ? d.size() : 10;
         for (int i = 0;i < s;i++) {
             content += "\n\t\"" + d[i].Pname + "\":{\n\t\t\"bytein\":" + (to_string(d[i].DataByteIn)) + ",\n\t\t\"byteout\":" + to_string(d[i].DataByteOut) + ",\n\t\t\"totalbytes\":" + to_string(d[i].TotalByte) + "\n\t},";
         }
-        content += "\n}";
+        content += "\n}\n";
         cout << content;
+        
         // Writing to File.
         
-        ofstream f;
+        ofstream outfile;
+        string fname = "output" + to_string(i) + ".txt";
+
+        outfile.open(fname); // append instead of overwrite
+        outfile << content;
 
     }
     cin.get();

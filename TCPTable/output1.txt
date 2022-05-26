@@ -1,0 +1,42 @@
+{
+	"C:\Program Files\McAfee\MfeAV\MfeAVSvc.exe":{
+		"bytein":76232806126929,
+		"byteout":76232806192465,
+		"totalbytes":152465612319394
+	},
+	"C:\Program Files\WindowsApps\ScreenovateTechnologies.DellMobileConnect_3.3.9809.0_x64__0vhbc3ng4wbp0\app\DellMobileConnectClient.exe":{
+		"bytein":15246561238493,
+		"byteout":15246561238493,
+		"totalbytes":30493122476986
+	},
+	"C:\Program Files\WindowsApps\ScreenovateTechnologies.DellMobileConnect_3.3.9809.0_x64__0vhbc3ng4wbp0\DellMobileConnectUniversalClient.exe":{
+		"bytein":15246561238493,
+		"byteout":15246561238493,
+		"totalbytes":30493122476986
+	},
+	"C:\Program Files\Dell\SupportAssistAgent\bin\SupportAssistAgent.exe":{
+		"bytein":0,
+		"byteout":0,
+		"totalbytes":0
+	},
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\PerfWatson2.exe":{
+		"bytein":0,
+		"byteout":0,
+		"totalbytes":0
+	},
+	"C:\Windows\System32\svchost.exe":{
+		"bytein":-15246561238493,
+		"byteout":-15246561238493,
+		"totalbytes":-30493122476986
+	},
+	"C:\Windows\System32\svchost.exe":{
+		"bytein":-15246561238493,
+		"byteout":-15246561238493,
+		"totalbytes":-30493122476986
+	},
+	"C:\Program Files\Google\Chrome\Application\chrome.exe":{
+		"bytein":-30523724118976,
+		"byteout":-30515402972094,
+		"totalbytes":-61039127091070
+	},
+}

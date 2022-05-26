@@ -1,0 +1,52 @@
+{
+	"C:\Program Files\Google\Chrome\Application\chrome.exe":{
+		"bytein":12300702582800,
+		"byteout":30115947778661,
+		"totalbytes":42416650361461
+	},
+	"C:\Windows\System32\svchost.exe":{
+		"bytein":15214348570075,
+		"byteout":15219985751511,
+		"totalbytes":30434334321586
+	},
+	"C:\Program Files\Common Files\McAfee\MMSSHost\MMSSHOST.exe":{
+		"bytein":0,
+		"byteout":0,
+		"totalbytes":0
+	},
+	"C:\Program Files\Dell\SupportAssistAgent\bin\SupportAssistAgent.exe":{
+		"bytein":0,
+		"byteout":0,
+		"totalbytes":0
+	},
+	"C:\Windows\System32\svchost.exe":{
+		"bytein":0,
+		"byteout":-1610529,
+		"totalbytes":-1610529
+	},
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\PerfWatson2.exe":{
+		"bytein":-30870573061,
+		"byteout":0,
+		"totalbytes":-30870573061
+	},
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe":{
+		"bytein":-29796790276,
+		"byteout":-18790612998,
+		"totalbytes":-48587403274
+	},
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\ServiceHub\Hosts\ServiceHub.Host.CoreCLR\ServiceHub.Host.CLR.exe":{
+		"bytein":-17565610553338,
+		"byteout":28186165255,
+		"totalbytes":-17537424388083
+	},
+	"C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\ServiceHub\Hosts\ServiceHub.Host.CoreCLR\ServiceHub.IndexingService.exe":{
+		"bytein":-17592186040320,
+		"byteout":0,
+		"totalbytes":-17592186040320
+	},
+	"C:\Program Files\WindowsApps\ScreenovateTechnologies.DellMobileConnect_3.3.9809.0_x64__0vhbc3ng4wbp0\DellMobileConnectUniversalClient.exe":{
+		"bytein":-30493122476986,
+		"byteout":-30493122476986,
+		"totalbytes":-60986244953972
+	},
+}
